@@ -4,8 +4,8 @@
 
 # 🍞 Mini Bun Docker Image
 
-[!IMPORTANT]
-This project is a fork of the official [Bun repository](https://github.com/oven-sh/bun).
+> [!IMPORTANT]
+> This project is a fork of the official [Bun repository](https://github.com/oven-sh/bun).
 
 ## 🚀 Project Overview
 
