@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://alpinelinux.org/alpinelinux-logo.svg" alt="Alpine Linux Logo" height="75">
+  <img src="https://alpinelinux.org/alpinelinux-logo.svg" alt="Alpine Linux Logo" height="65">
 </p>
 
 # 🍞 Mini Bun Docker Image
