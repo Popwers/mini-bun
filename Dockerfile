@@ -102,7 +102,6 @@ RUN --mount=type=bind,from=build,source=/tmp,target=/tmp \
     && apk --no-cache --force-overwrite --allow-untrusted add \
       /tmp/glibc.apk \
       /tmp/glibc-bin.apk \
-    && rm -rf /tmp/* \
     && ln -s /usr/local/bin/bun /usr/local/bin/bunx \
     && which bun \
     && which bunx \

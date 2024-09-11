@@ -65,7 +65,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push to Docker
+      - name: Build and push to Docker
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
