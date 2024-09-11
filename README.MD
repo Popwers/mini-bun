@@ -2,7 +2,9 @@
   <img src="https://bun.sh/logo.svg" alt="Bun Logo" width="150">
   &nbsp;&nbsp;&nbsp;
   <img src="https://www.docker.com/wp-content/uploads/2022/03/vertical-logo-monochromatic.png" alt="Docker Logo" width="150">
-  &nbsp;&nbsp;&nbsp;
+</p>
+
+<p align="center">
   <img src="https://alpinelinux.org/alpinelinux-logo.svg" alt="Alpine Linux Logo" width="150">
 </p>
 
