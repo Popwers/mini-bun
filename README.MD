@@ -1,4 +1,6 @@
-![Bun Logo](https://bun.sh/logo.svg)
+<p align="center">
+  <img src="https://bun.sh/logo.svg" alt="Bun Logo" width="200" height="200">
+</p>
 
 # 🍞 Mini Bun Docker Image
 
