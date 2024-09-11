@@ -1,5 +1,9 @@
-<p align="center">
-  <img src="https://bun.sh/logo.svg" alt="Bun Logo" width="200" height="200">
+<p style="display: flex; align-items: center; justify-content: space-around; width: 100%;">
+  <img src="https://bun.sh/logo.svg" alt="Bun Logo" style="margin: 20px;object-fit: contain;width: 150px;height: 150px;">
+  +
+  <img src="https://www.docker.com/wp-content/uploads/2022/03/vertical-logo-monochromatic.png" alt="Docker Logo" style="margin: 20px;object-fit: contain;width: 150px;height: 150px;">
+  +
+  <img src="https://alpinelinux.org/alpinelinux-logo.svg" alt="Alpine Linux Logo" style="margin: 20px;object-fit: contain;width: 150px;height: 150px;">
 </p>
 
 # 🍞 Mini Bun Docker Image
