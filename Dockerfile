@@ -10,6 +10,7 @@ RUN apk --no-cache add \
 	gpg-agent \
 	unzip \
 	upx \
+	binutils \
     && arch="$(apk --print-arch)" \
     && case "${arch##*-}" in \
       x86_64) build="x64-musl-baseline";; \
@@ -49,7 +50,8 @@ RUN apk --no-cache add \
     && mv "bun-linux-$build/bun" /usr/local/bin/bun \
     && rm -f "bun-linux-$build.zip" SHASUMS256.txt.asc SHASUMS256.txt \
     && chmod +x /usr/local/bin/bun \
-    && upx --all-methods /usr/local/bin/bun
+    && strip -s /usr/local/bin/bun \
+    && upx --best --lzma --no-backup /usr/local/bin/bun
 
 FROM alpine:3.22
 
@@ -67,12 +69,10 @@ COPY docker-entrypoint.sh /usr/local/bin/
 RUN mkdir -p /usr/local/bun-node-fallback-bin && ln -s /usr/local/bin/bun /usr/local/bun-node-fallback-bin/node
 ENV PATH "${PATH}:/usr/local/bun-node-fallback-bin"
 
-# Temporarily use the `build`-stage /tmp folder to access the glibc APKs:
-RUN --mount=type=bind,from=build,source=/tmp,target=/tmp \
-    addgroup -g 1000 bun \
+RUN addgroup -g 1000 bun \
     && adduser -u 1000 -G bun -s /bin/sh -D bun \
     && ln -s /usr/local/bin/bun /usr/local/bin/bunx \
-    && apk add libgcc libstdc++ \
+    && apk add --no-cache libgcc libstdc++ \
     && which bun \
     && which bunx \
     && bun --version

@@ -31,6 +31,25 @@ jobs:
           fi
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Verify required release artifacts exist
+        if: steps.check_version.outputs.new_version == 'true'
+        run: |
+          # The image targets musl (x64 + arm64). Abort the bump if upstream
+          # stops shipping one of these builds (e.g. Rust rewrite gaps) so we
+          # never push a broken image. See: Bun Rust rewrite is Linux x64
+          # glibc only as of v1.3.14.
+          VERSION="${{ steps.check_version.outputs.latest_version }}"
+          BASE="https://github.com/oven-sh/bun/releases/download/bun-${VERSION}"
+          for arch in x64-musl-baseline aarch64-musl; do
+            URL="${BASE}/bun-linux-${arch}.zip"
+            echo "Checking ${URL}"
+            if ! curl -fsI "${URL}" > /dev/null; then
+              echo "::error::Missing required artifact bun-linux-${arch}.zip for ${VERSION} — refusing to bump."
+              exit 1
+            fi
+          done
+          echo "All required musl artifacts present for ${VERSION}."
+
       - name: Update Dockerfile
         if: steps.check_version.outputs.new_version == 'true'
         run: |

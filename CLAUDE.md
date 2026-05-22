@@ -89,7 +89,7 @@ The Bun version is managed via the `BUN_VERSION` build argument in the Dockerfil
 3. **GPG Keys**: The GPG key `F3DCC08A8572C0749B3E18888EAB4D40A7B22B59` is Bun's official signing key
 4. **Alpine Version**: Currently using Alpine 3.22 - check compatibility before upgrading
 5. **No package.json**: This is a Docker-only project, no Node/Bun package management
-6. **UPX Compression**: Uses `--all-methods` flag for maximum compression
+6. **UPX Compression**: Uses `--best --lzma --no-backup` (binary stripped via `strip -s` before packing). `--ultra-brute` was benchmarked and rejected: ~10× slower for <1% gain. `--all-methods` was the previous setting; `--best --lzma` is both faster and slightly smaller in practice.
 7. **Security**: Downloads are verified via GPG signature and SHA256 checksum
 
 ## Environment Variables
