@@ -64,18 +64,21 @@ ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=${BUN_RUNTIME_TRANSPILER_CACHE_PATH}
 ARG BUN_INSTALL_BIN=/usr/local/bin
 ENV BUN_INSTALL_BIN=${BUN_INSTALL_BIN}
 
-COPY --from=build /usr/local/bin/bun /usr/local/bin/
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN mkdir -p /usr/local/bun-node-fallback-bin && ln -s /usr/local/bin/bun /usr/local/bun-node-fallback-bin/node
-ENV PATH "${PATH}:/usr/local/bun-node-fallback-bin"
+ENV PATH="${PATH}:/usr/local/bun-node-fallback-bin"
 
-RUN addgroup -g 1000 bun \
+COPY --from=build /usr/local/bin/bun /usr/local/bin/
+
+RUN apk add --no-cache libgcc libstdc++ \
+    && addgroup -g 1000 bun \
     && adduser -u 1000 -G bun -s /bin/sh -D bun \
     && ln -s /usr/local/bin/bun /usr/local/bin/bunx \
-    && apk add --no-cache libgcc libstdc++ \
+    && mkdir -p /usr/local/bun-node-fallback-bin \
+    && ln -s /usr/local/bin/bun /usr/local/bun-node-fallback-bin/node \
     && which bun \
     && which bunx \
     && bun --version
+
+COPY docker-entrypoint.sh /usr/local/bin/
 
 WORKDIR /home/bun/app
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
