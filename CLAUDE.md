@@ -22,7 +22,7 @@ mini-bun/
 ### Dockerfile
 - **Purpose**: Multi-stage build that downloads Bun, verifies with GPG, and compresses with UPX
 - **Base image**: `alpine:3.22`
-- **Current Bun version**: Defined by `ARG BUN_VERSION` (currently v1.3.4)
+- **Current Bun version**: Defined by `ARG BUN_VERSION` at the top of the Dockerfile (auto-bumped weekly by CI — never trust a version number written in prose; read the Dockerfile)
 - **Architecture support**: x86_64 (x64-musl-baseline) and aarch64 (aarch64-musl)
 - **Key features**:
   - GPG signature verification for downloads
@@ -66,7 +66,7 @@ docker run -it mini-bun bun --version
 ## Version Management
 
 The Bun version is managed via the `BUN_VERSION` build argument in the Dockerfile:
-- Located at line 3: `ARG BUN_VERSION=v1.3.4`
+- Located at the top of the Dockerfile: `ARG BUN_VERSION=...` (read the Dockerfile for the current value)
 - Automatically updated by GitHub Actions when new Bun releases are detected
 - Commit message format: `🚀 Update Bun version to vX.X.X`
 

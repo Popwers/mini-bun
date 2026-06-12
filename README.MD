@@ -10,62 +10,114 @@
 
 # 🍞 Mini Bun Docker Image
 
-> [!IMPORTANT]
-> This project is a fork of the official [Bun repository](https://github.com/oven-sh/bun).
+> [!NOTE]
+> This is an independent minimal packaging of the official [Bun](https://github.com/oven-sh/bun) release binaries. Not affiliated with the Bun team.
 
 ## 🚀 Project Overview
 
-[Mini Bun Docker Image](https://hub.docker.com/r/popwers/mini-bun) aims to create a compact and efficient Docker image for Bun by leveraging UPX (Ultimate Packer for eXecutables) to compress the Bun binary. The result is a significantly smaller container image without compromising functionality.
+[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **~32.8 MB** Docker image — roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.22.
 
-## 📁 Project Structure
+## 🏷️ Tags & Architectures
 
-- `Dockerfile`: Defines the multi-stage build process, including UPX compression
-- `docker-entrypoint.sh`: Entry point script for the Docker container
-- `.github/workflows/`:
-  - `publish.yml`: Workflow for building and publishing the Docker image
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest Bun release |
+| `vX.Y.Z` | Pinned to a specific Bun version |
+
+**Supported architectures**: `linux/amd64` (x64-musl-baseline) and `linux/arm64` (aarch64-musl).
+
+Images are rebuilt and published automatically every Monday when a new Bun release is detected.
 
 ## 🏁 Getting Started
 
-To use this optimized Bun Docker image:
+```bash
+# Pull and check the Bun version
+docker run --rm popwers/mini-bun --version
 
-1. Pull the image from Docker Hub:
-   ```bash
-   docker pull popwers/mini-bun:latest
-   ```
+# Interactive shell
+docker run -it popwers/mini-bun:latest sh
+```
 
-2. Run a container:
-   ```bash
-   docker run -it popwers/mini-bun:latest
-   ```
+## 📦 Usage in your Dockerfile
 
-## 🛠️ Building the Image Locally
+```dockerfile
+FROM popwers/mini-bun:latest
 
-If you want to build the image locally:
+WORKDIR /home/bun/app
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/popwers/mini-bun.git
-   cd mini-bun
-   ```
+# Copy files with ownership set to the non-root bun user
+COPY --chown=bun:bun . .
 
-2. Build the Docker image:
-   ```bash
-   docker build -t mini-bun .
-   ```
+RUN bun install --frozen-lockfile
+
+CMD ["bun", "index.ts"]
+```
+
+To run as the non-root `bun` user (UID/GID 1000):
+
+```dockerfile
+FROM popwers/mini-bun:latest
+
+WORKDIR /home/bun/app
+COPY --chown=bun:bun . .
+RUN bun install --frozen-lockfile
+
+USER bun
+CMD ["bun", "index.ts"]
+```
+
+Or at runtime: `docker run -u bun popwers/mini-bun:latest bun index.ts`
+
+## ⚙️ Runtime Notes
+
+**Default user**: `root` (matches `oven/bun` behavior). A `bun` user (UID/GID 1000) is available — use `USER bun` in your Dockerfile or `-u bun` at runtime.
+
+**Working directory**: `/home/bun/app` — owned by `bun:bun` and writable by the non-root user.
+
+**Environment variables**:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BUN_RUNTIME_TRANSPILER_CACHE_PATH` | `0` (disabled) | Transpiler cache — disabled as it is useless in ephemeral containers |
+| `BUN_INSTALL_BIN` | `/usr/local/bin` | Global binary install path so `bun install -g` works out of the box |
+
+**Entrypoint behavior**: The entrypoint prepends `bun` automatically when the first argument is a flag (`--version`, `--help`…), an unknown command, or a non-executable file. Pass a known executable to bypass it.
+
+**Node fallback**: `node script.js` works via a symlink shim (`/usr/local/bun-node-fallback-bin/node → bun`). `node --version` and the Node REPL do **not** work — this is a known upstream wrapper limitation.
+
+**`bunx`** is available (symlink to `bun`).
+
+**TLS / fetch**: Works without installing `ca-certificates` — Bun embeds its own CA store.
+
+## 🛠️ Building Locally
+
+```bash
+git clone https://github.com/popwers/mini-bun.git
+cd mini-bun
+
+# Build for current platform
+docker build -t mini-bun .
+
+# Build with a specific Bun version
+docker build --build-arg BUN_VERSION=v1.3.0 -t mini-bun .
+
+# Verify the binary and size
+docker run --rm mini-bun --version
+docker images mini-bun
+```
 
 ## 🤖 GitHub Actions Workflow
 
-This project uses GitHub Actions for automation:
-
-- **Publish Workflow**: Builds the Docker image for multiple architectures (amd64, arm64) and pushes it to Docker Hub
-- **Version Check Workflow**: Automatically checks for new Bun releases and triggers a rebuild if a new version is available
+- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight). Checks for a new Bun release, updates the `BUN_VERSION` arg in the Dockerfile and commits when a new version is found, then builds multi-arch images (amd64, arm64) and pushes to Docker Hub.
+- **CI workflow** (`ci.yml`): Runs per-arch smoke tests on every PR and push to gate the publish step.
 
 ## 🙏 Credits
 
-- [Bun](https://bun.sh/) - The JavaScript runtime
-- [UPX](https://upx.github.io/) - The Ultimate Packer for eXecutables
+- [Bun](https://bun.sh/) — The JavaScript runtime
+- [UPX](https://upx.github.io/) — The Ultimate Packer for eXecutables
 
 ## 📚 Additional Resources
 
 - [Bun Documentation](https://bun.sh/docs)
 - [Bun GitHub Repository](https://github.com/oven-sh/bun)
+- [Docker Hub — popwers/mini-bun](https://hub.docker.com/r/popwers/mini-bun)
