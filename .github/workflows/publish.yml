@@ -71,6 +71,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Docker emulator
         uses: docker/setup-qemu-action@v3
@@ -89,6 +91,8 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            BUN_VERSION=${{ needs.check_and_update_bun_version.outputs.latest_version }}
           tags: |
             popwers/mini-bun:latest
             popwers/mini-bun:${{ needs.check_and_update_bun_version.outputs.latest_version }}
