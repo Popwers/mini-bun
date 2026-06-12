@@ -86,6 +86,46 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Build amd64 for testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            BUN_VERSION=${{ needs.check_and_update_bun_version.outputs.latest_version }}
+          tags: mini-bun:smoke-amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test amd64
+        env:
+          LATEST_VERSION: ${{ needs.check_and_update_bun_version.outputs.latest_version }}
+        run: |
+          EXPECTED="${LATEST_VERSION#v}"
+          ./scripts/smoke-test.sh mini-bun:smoke-amd64 "$EXPECTED"
+
+      - name: Build arm64 for testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          load: true
+          build-args: |
+            BUN_VERSION=${{ needs.check_and_update_bun_version.outputs.latest_version }}
+          tags: mini-bun:smoke-arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test arm64 (minimal — runs under QEMU)
+        env:
+          LATEST_VERSION: ${{ needs.check_and_update_bun_version.outputs.latest_version }}
+        run: |
+          EXPECTED="${LATEST_VERSION#v}"
+          VERSION=$(docker run --rm --platform linux/arm64 mini-bun:smoke-arm64 --version)
+          echo "arm64 reports: $VERSION"
+          [ "$VERSION" = "$EXPECTED" ]
+
       - name: Build and push to Docker
         uses: docker/build-push-action@v6
         with:
@@ -93,6 +133,8 @@ jobs:
           push: true
           build-args: |
             BUN_VERSION=${{ needs.check_and_update_bun_version.outputs.latest_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             popwers/mini-bun:latest
             popwers/mini-bun:${{ needs.check_and_update_bun_version.outputs.latest_version }}
