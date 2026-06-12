@@ -26,4 +26,7 @@ docker run --rm "$IMAGE" bun -e 'console.log(1 + 1)' | grep -qx 2
 echo "--- TLS fetch (embedded CA store)"
 docker run --rm "$IMAGE" bun -e 'fetch("https://bun.sh").then(r => { if (!r.ok) process.exit(1); console.log("fetch", r.status); })'
 
+echo "--- workdir writable by bun user"
+docker run --rm -u bun "$IMAGE" sh -c 'touch /home/bun/app/.w && rm /home/bun/app/.w'
+
 echo "SMOKE OK"
