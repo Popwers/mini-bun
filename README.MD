@@ -23,8 +23,11 @@
 |-----|-------------|
 | `latest` | Latest Bun release |
 | `vX.Y.Z` | Pinned to a specific Bun version |
+| `X.Y` | Minor-line alias — tracks the latest patch for that minor (e.g. `1.3`) |
 
 **Supported architectures**: `linux/amd64` (x64-musl-baseline) and `linux/arm64` (aarch64-musl).
+
+Images are available on both **Docker Hub** (`popwers/mini-bun`) and **GitHub Container Registry** (`ghcr.io/popwers/mini-bun`). All three tags above are published to both registries on every release.
 
 Images are rebuilt and published automatically every Monday when a new Bun release is detected.
 
@@ -108,8 +111,8 @@ docker images mini-bun
 
 ## 🤖 GitHub Actions Workflow
 
-- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight). Checks for a new Bun release, updates the `BUN_VERSION` arg in the Dockerfile and commits when a new version is found, then builds multi-arch images (amd64, arm64) and pushes to Docker Hub.
-- **CI workflow** (`ci.yml`): Runs per-arch smoke tests on every PR and push to gate the publish step.
+- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight). Checks for a new Bun release, updates the `BUN_VERSION` arg in the Dockerfile and commits when a new version is found, then smoke-tests each architecture (amd64 and arm64) before building and pushing the multi-arch image to both Docker Hub and GitHub Container Registry.
+- **CI workflow** (`ci.yml`): Builds the image and runs a smoke test on every push and PR (native arch only, no QEMU overhead).
 
 ## 🙏 Credits
 
