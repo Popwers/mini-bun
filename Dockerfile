@@ -1,4 +1,4 @@
-FROM alpine:3.22 AS build
+FROM alpine:3.24 AS build
 
 ARG BUN_VERSION=v1.4.0
 
@@ -53,7 +53,7 @@ RUN apk --no-cache add \
     && strip -s /usr/local/bin/bun \
     && upx --best --lzma --no-backup /usr/local/bin/bun
 
-FROM alpine:3.22
+FROM alpine:3.24
 
 LABEL org.opencontainers.image.source="https://github.com/popwers/mini-bun" \
       org.opencontainers.image.description="Minimal Bun runtime image (Alpine + UPX-compressed official Bun binary)"
