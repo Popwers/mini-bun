@@ -9,7 +9,7 @@ jobs:
   build-and-smoke-test:
     name: Build and smoke test
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.event.head_commit.message, '🚀 Update Bun version') }}
+    if: ${{ !startsWith(github.event.head_commit.message, '🚀 Update') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,3 +30,9 @@ jobs:
         run: |
           EXPECTED=$(grep 'ARG BUN_VERSION=' Dockerfile | cut -d'=' -f2 | sed 's/^v//')
           ./scripts/smoke-test.sh mini-bun:ci-test "$EXPECTED"
+
+      - name: Check docs against image
+        run: ./scripts/bump-versions.sh check-docs mini-bun:ci-test
+
+      - name: Check README pins match the image
+        run: ./scripts/bump-versions.sh check-docs mini-bun:ci-test
