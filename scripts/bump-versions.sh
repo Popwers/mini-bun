@@ -289,11 +289,15 @@ cmd_check_docs() {
 			echo "error: README.MD has no **N.N MB** size token" >&2
 			status=1
 		elif [ "$claimed" != "$measured" ]; then
-			echo "error: README size **${claimed} MB** != measured ${measured} MB ($IMAGE)" >&2
-			status=1
+			if [ -n "${GITHUB_ACTIONS:-}" ]; then
+				echo "error: README size **${claimed} MB** != measured ${measured} MB ($IMAGE)" >&2
+				status=1
+			else
+				echo "warn: local inspect Size ${measured} MB != README **${claimed} MB**. CI buildx load is the pin." >&2
+			fi
 		fi
 		if grep -qE '\*\*~[0-9][0-9]*\.[0-9][0-9]* MB\*\*' "$README"; then
-			echo "error: README size still uses a tilde; canonical form is **${measured} MB**" >&2
+			echo "error: README size still uses a tilde; canonical form is **N.N MB**" >&2
 			status=1
 		fi
 	fi
@@ -302,6 +306,10 @@ cmd_check_docs() {
 
 cmd_sync_docs() {
 	IMAGE=$1
+	if [ -z "${GITHUB_ACTIONS:-}" ]; then
+		echo "error: sync-docs writes the GitHub Actions inspect Size. Run it from publish.yml or CI, not a local daemon." >&2
+		exit 1
+	fi
 	pin_guard size
 	mb=$(pin_latest size)
 	pin_write size "$mb"

@@ -14,8 +14,10 @@ Harness is `docker run` plus `scripts/smoke-test.sh`. Evidence is command transc
 Build a disposable tag from the repo root. Ready means the build exits 0.
 
 ```sh
-docker build -t mini-bun:verify .
+docker buildx build --load -t mini-bun:verify .
 ```
+
+The README `**N.N MB**` pin is GitHub Actions `docker image inspect` Size after `docker/build-push-action` load. A local daemon can report a different Size. Do not run `sync-docs` locally.
 
 There is no long-lived server. Each drive starts a new `docker run --rm`.
 
@@ -35,7 +37,7 @@ Doctor must report all of these or stop:
 - image `mini-bun:verify` exists
 - `docker run --rm mini-bun:verify --version` equals `ARG BUN_VERSION` in the Dockerfile with the leading `v` stripped
 - `docker run --rm mini-bun:verify cat /etc/os-release` has `VERSION_ID` equal to the Dockerfile `FROM alpine:X.Y` minor
-- `docker image inspect -f '{{.Size}}'` formatted as one-decimal MB (`bytes / 1000 / 1000`) equals the `**N.N MB**` claim in `README.MD`
+- On GitHub Actions, `docker image inspect` Size as one-decimal MB equals the `**N.N MB**` claim in `README.MD`. Locally a Size mismatch is a warning. Bun and Alpine must still match.
 
 ## Drive
 

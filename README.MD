@@ -15,7 +15,7 @@
 
 ## 🚀 Project Overview
 
-[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **31.1 MB** Docker image, roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.24. The megabyte figure is `docker image inspect` Size on amd64, written by `scripts/bump-versions.sh sync-docs`.
+[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **37.6 MB** Docker image, roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.24. The megabyte figure is GitHub Actions `docker image inspect` Size after the CI buildx load. Do not overwrite it from a local `docker build`. The weekly workflow rewrites it via `scripts/bump-versions.sh sync-docs`.
 
 ## 🏷️ Tags & Architectures
 

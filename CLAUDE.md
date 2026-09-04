@@ -76,7 +76,7 @@ docker run -it mini-bun bun --version
 Bun and Alpine pins live in the Dockerfile. Run `scripts/bump-versions.sh apply` (or wait for the weekly workflow) to update them:
 - Bun: first `ARG BUN_VERSION=...` (read the Dockerfile for the current value)
 - Alpine: both `FROM alpine:X.Y` lines
-- README Alpine minor and `**N.N MB**` size: `scripts/bump-versions.sh sync-docs <image>` after a real amd64 build. Do not type the size by hand.
+- README Alpine minor and `**N.N MB**` size: `scripts/bump-versions.sh sync-docs <image>` from GitHub Actions after the CI buildx load. Local `docker image inspect` Size can differ. Do not run `sync-docs` on a laptop.
 - The weekly job commits Dockerfile + README + CLAUDE together. Message lists Bun, Alpine, and the measured size.
 
 ## Conventions

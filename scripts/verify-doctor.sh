@@ -41,8 +41,11 @@ if [ -z "$CLAIMED" ]; then
 	exit 1
 fi
 if [ "$CLAIMED" != "$MEASURED" ]; then
-	echo "FAIL: README size $CLAIMED MB, image is $MEASURED MB ($BYTES bytes)" >&2
-	exit 1
+	if [ -n "${GITHUB_ACTIONS:-}" ]; then
+		echo "FAIL: README size $CLAIMED MB, image is $MEASURED MB ($BYTES bytes)" >&2
+		exit 1
+	fi
+	echo "warn: local inspect Size $MEASURED MB != README $CLAIMED MB. CI buildx load is the pin." >&2
 fi
 
 echo "doctor ok"
