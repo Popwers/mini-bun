@@ -1,6 +1,6 @@
 FROM alpine:3.24 AS build
 
-ARG BUN_VERSION=v1.4.0
+ARG BUN_VERSION=v1.4.1
 
 RUN apk --no-cache add \
 	ca-certificates \
