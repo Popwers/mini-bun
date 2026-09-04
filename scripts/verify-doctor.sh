@@ -1,5 +1,4 @@
 #!/bin/sh
-# Read-only health check for a mini-bun image. Usage: verify-doctor.sh <image>
 set -eu
 
 IMAGE="${1:?usage: verify-doctor.sh <image>}"
