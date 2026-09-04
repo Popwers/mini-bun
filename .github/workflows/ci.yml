@@ -33,6 +33,3 @@ jobs:
 
       - name: Check docs against image
         run: ./scripts/bump-versions.sh check-docs mini-bun:ci-test
-
-      - name: Check README pins match the image
-        run: ./scripts/bump-versions.sh check-docs mini-bun:ci-test

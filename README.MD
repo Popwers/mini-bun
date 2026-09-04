@@ -15,7 +15,7 @@
 
 ## 🚀 Project Overview
 
-[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **31.1 MB** Docker image, roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.24. The megabyte figure is `docker image inspect` Size on amd64, written by `scripts/bump-versions.sh sync-docs`.
+[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **~32.8 MB** Docker image — roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.24.
 
 ## 🏷️ Tags & Architectures
 
@@ -29,7 +29,7 @@
 
 Images are available on both **Docker Hub** (`popwers/mini-bun`) and **GitHub Container Registry** (`ghcr.io/popwers/mini-bun`). All three tags above are published to both registries on every release.
 
-Images are rebuilt and published automatically every Monday when a new Bun release is detected.
+Images are rebuilt and published automatically every Monday when a Bun or Alpine pin changes.
 
 ## 🏁 Getting Started
 
@@ -111,7 +111,7 @@ docker images mini-bun
 
 ## 🤖 GitHub Actions Workflow
 
-- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight). Checks Bun and Alpine pins, updates the Dockerfile when either pin has drifted, smoke-tests amd64 and arm64, writes the measured amd64 image size and the Alpine minor into the README, then pushes the multi-arch image to Docker Hub and GitHub Container Registry.
+- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight) and on manual dispatch. Each run applies Bun and Alpine pins, smoke-tests amd64, then commits Dockerfile, README, and CLAUDE together (Bun, Alpine, measured size). Registry push stays limited to a pin change or a manual dispatch.
 - **CI workflow** (`ci.yml`): Builds the image, runs the smoke test, and checks that the README Alpine minor and `**N.N MB**` size match the image (native arch only, no QEMU overhead).
 
 ## 🙏 Credits

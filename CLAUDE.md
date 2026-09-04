@@ -29,7 +29,7 @@ mini-bun/
 
 ### Dockerfile
 - **Purpose**: Multi-stage build that downloads Bun, verifies with GPG, and compresses with UPX
-- **Base image**: `alpine:3.24` (read `FROM alpine` in the Dockerfile; CI bumps it)
+- **Base image**: `alpine:3.24` (source of truth is the Dockerfile `FROM alpine` lines)
 - **Current Bun version**: Defined by `ARG BUN_VERSION` at the top of the Dockerfile (auto-bumped weekly by CI — never trust a version number written in prose; read the Dockerfile)
 - **Architecture support**: x86_64 (x64-musl-baseline) and aarch64 (aarch64-musl)
 - **Key features**:
@@ -46,8 +46,8 @@ mini-bun/
 ### .github/workflows/publish.yml
 - **Trigger**: Weekly cron (Mondays at midnight) or manual dispatch
 - **Two jobs**:
-  1. `check_and_update_bun_version`: Compares current vs latest Bun and Alpine pins, updates the Dockerfile and commits if either pin drifted
-  2. `docker`: Builds multi-arch image (amd64, arm64), writes the measured amd64 size into README.MD, and pushes to Docker Hub
+  1. `check_and_update_bun_version`: Compares current vs latest Bun and Alpine pins and exports them
+  2. `docker`: Applies both pins, smoke-tests amd64, then commits Dockerfile, README, and CLAUDE in one commit (Bun, Alpine, measured size). Registry push runs only when a pin changed or the run is a manual dispatch.
 
 ## Development Workflows
 
@@ -77,12 +77,12 @@ Bun and Alpine pins live in the Dockerfile. Run `scripts/bump-versions.sh apply`
 - Bun: first `ARG BUN_VERSION=...` (read the Dockerfile for the current value)
 - Alpine: both `FROM alpine:X.Y` lines
 - README Alpine minor and `**N.N MB**` size: `scripts/bump-versions.sh sync-docs <image>` after a real amd64 build. Do not type the size by hand.
-- Commit message is bun-only, alpine-only, or both. See `scripts/bump-versions.sh`.
+- The weekly job commits Dockerfile + README + CLAUDE together. Message lists Bun, Alpine, and the measured size.
 
 ## Conventions
 
 ### Commit Messages
-- Version updates use a rocket emoji. Bun-only, alpine-only, and combined messages are produced by `scripts/bump-versions.sh`.
+- Pin commits use a rocket emoji and list Bun, Alpine, and image size. See `scripts/bump-versions.sh sync-docs`.
 
 ### Docker Tags
 - `popwers/mini-bun:latest` - Latest stable build
@@ -93,11 +93,11 @@ Bun and Alpine pins live in the Dockerfile. Run `scripts/bump-versions.sh apply`
 
 ## Important Notes for AI Assistants
 
-1. **Version Updates**: Run `scripts/bump-versions.sh apply` (or the weekly workflow). That updates `ARG BUN_VERSION` and both `FROM alpine` lines.
+1. **Version Updates**: Run `scripts/bump-versions.sh apply` (updates `ARG BUN_VERSION` and both `FROM alpine` lines). Do not hand-edit version numbers in docs.
 2. **Multi-arch Support**: Any Dockerfile changes must work for both amd64 and arm64
 3. **GPG Keys**: The GPG key `F3DCC08A8572C0749B3E18888EAB4D40A7B22B59` is Bun's official signing key
-4. **Alpine Version**: Read `FROM alpine` in the Dockerfile. Check compatibility before bumping the pin.
-5. **No package.json**: This is a Docker-only project, no Node/Bun package management. Vite+, shadcn, and any app UI toolchain are N/A. Do not install them.
+4. **Alpine Version**: Source of truth is the Dockerfile `FROM alpine` lines. Check compatibility before bumping the pin.
+5. **No package.json**: This is a Docker-only project, no Node/Bun package management. Vite+, shadcn, and UI verify do not apply. This repo is a Docker runtime image, not a Vite+ or UI app. Do not install them.
 6. **UPX Compression**: Uses `--best --lzma --no-backup` (binary stripped via `strip -s` before packing). `--ultra-brute` was benchmarked and rejected: ~10× slower for <1% gain. `--all-methods` was the previous setting; `--best --lzma` is both faster and slightly smaller in practice.
 7. **Security**: Downloads are verified via GPG signature and SHA256 checksum
 
@@ -114,8 +114,15 @@ Bun and Alpine pins live in the Dockerfile. Run `scripts/bump-versions.sh apply`
 ```bash
 ./scripts/bump-versions.sh check
 ./scripts/bump-versions.sh apply
-./scripts/bump-versions.sh sync-docs mini-bun:verify
-./scripts/bump-versions.sh check-docs mini-bun:verify
+./scripts/bump-versions.sh check-docs
+./scripts/bump-versions.sh check-docs mini-bun:ci-test
+./scripts/bump-versions.sh sync-docs mini-bun:smoke-amd64
+```
+
+### Smoke test
+```bash
+EXPECTED=$(grep 'ARG BUN_VERSION=' Dockerfile | cut -d'=' -f2 | sed 's/^v//')
+./scripts/smoke-test.sh mini-bun:ci-test "$EXPECTED"
 ```
 
 ### Verify Image Size

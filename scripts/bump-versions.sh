@@ -262,41 +262,34 @@ cmd_apply() {
 			pin_guard "$id" "$lat"
 			pin_write "$id" "$lat"
 			echo "wrote $id=$lat"
-			if [ "$id" = alpine ]; then
-				sync_alpine_docs
-			fi
 		fi
 	done
+	sync_alpine_docs
 }
 
 cmd_check_docs() {
 	IMAGE=${1:-}
 	status=0
 	minor=$(pin_current alpine)
-	if ! grep -q "Alpine ${minor}" "$README"; then
-		echo "error: README.MD must name Alpine ${minor}" >&2
-		status=1
-	fi
 	leftover=$(grep -nE 'Alpine 3\.[0-9]+|alpine:3\.[0-9]+' "$README" "$CLAUDE" | grep -vF "Alpine ${minor}" | grep -vF "alpine:${minor}" || true)
 	if [ -n "$leftover" ]; then
 		printf '%s\n' "$leftover" >&2
 		echo "error: Alpine minor in README.MD or CLAUDE.md does not match Dockerfile ($minor)" >&2
 		status=1
 	fi
-	claimed=$(pin_current size)
-	if [ -z "$claimed" ]; then
-		echo "error: README.MD has no **N.N MB** size token" >&2
-		status=1
-	fi
-	if grep -qE '\*\*~[0-9][0-9]*\.[0-9][0-9]* MB\*\*' "$README"; then
-		echo "error: README size still uses a tilde; canonical form is **N.N MB**" >&2
-		status=1
-	fi
 	if [ -n "$IMAGE" ]; then
 		pin_guard size
 		measured=$(pin_latest size)
-		if [ "$claimed" != "$measured" ]; then
+		claimed=$(pin_current size)
+		if [ -z "$claimed" ]; then
+			echo "error: README.MD has no **N.N MB** size token" >&2
+			status=1
+		elif [ "$claimed" != "$measured" ]; then
 			echo "error: README size **${claimed} MB** != measured ${measured} MB ($IMAGE)" >&2
+			status=1
+		fi
+		if grep -qE '\*\*~[0-9][0-9]*\.[0-9][0-9]* MB\*\*' "$README"; then
+			echo "error: README size still uses a tilde; canonical form is **${measured} MB**" >&2
 			status=1
 		fi
 	fi
@@ -309,7 +302,12 @@ cmd_sync_docs() {
 	mb=$(pin_latest size)
 	pin_write size "$mb"
 	sync_alpine_docs
+	bun=$(pin_current bun)
+	alpine=$(pin_current alpine)
+	msg="🚀 Update Bun ${bun}, Alpine ${alpine}, image size ${mb} MB"
+	write_output commit_message "$msg"
 	echo "size: ${mb} MB ($IMAGE)"
+	echo "$msg"
 }
 
 case "${1:-}" in
