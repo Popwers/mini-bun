@@ -15,7 +15,7 @@
 
 ## 🚀 Project Overview
 
-[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **~32.8 MB** Docker image — roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.22.
+[Mini Bun](https://hub.docker.com/r/popwers/mini-bun) packages the official Bun runtime into a **31.1 MB** Docker image, roughly 3× smaller than `oven/bun:alpine`. The official release binary is verified with GPG + SHA256, stripped, and then compressed with UPX (`--best --lzma`), all on top of Alpine 3.24. The megabyte figure is `docker image inspect` Size on amd64, written by `scripts/bump-versions.sh sync-docs`.
 
 ## 🏷️ Tags & Architectures
 
@@ -111,8 +111,8 @@ docker images mini-bun
 
 ## 🤖 GitHub Actions Workflow
 
-- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight). Checks for a new Bun release, updates the `BUN_VERSION` arg in the Dockerfile and commits when a new version is found, then smoke-tests each architecture (amd64 and arm64) before building and pushing the multi-arch image to both Docker Hub and GitHub Container Registry.
-- **CI workflow** (`ci.yml`): Builds the image and runs a smoke test on every push and PR (native arch only, no QEMU overhead).
+- **Publish workflow** (`publish.yml`): Runs weekly (Monday midnight). Checks Bun and Alpine pins, updates the Dockerfile when either pin has drifted, smoke-tests amd64 and arm64, writes the measured amd64 image size and the Alpine minor into the README, then pushes the multi-arch image to Docker Hub and GitHub Container Registry.
+- **CI workflow** (`ci.yml`): Builds the image, runs the smoke test, and checks that the README Alpine minor and `**N.N MB**` size match the image (native arch only, no QEMU overhead).
 
 ## 🙏 Credits
 

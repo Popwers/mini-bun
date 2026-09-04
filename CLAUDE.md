@@ -12,16 +12,24 @@ mini-bun/
 ├── docker-entrypoint.sh    # Container entry point script
 ├── README.MD               # Project documentation
 ├── CLAUDE.md               # This file - AI assistant guide
+├── scripts/
+│   ├── bump-versions.sh    # Check and apply Bun and Alpine pins; sync README size
+│   ├── smoke-test.sh       # Image smoke test
+│   └── verify-doctor.sh    # Read-only image health check
+├── .cursor/
+│   └── skills/
+│       └── verify-mini-bun/
 └── .github/
     └── workflows/
-        └── publish.yml     # CI/CD workflow for Docker Hub deployment
+        ├── ci.yml          # PR and push build + smoke test
+        └── publish.yml     # Weekly pin bump and Docker Hub deploy
 ```
 
 ## Key Files
 
 ### Dockerfile
 - **Purpose**: Multi-stage build that downloads Bun, verifies with GPG, and compresses with UPX
-- **Base image**: `alpine:3.22`
+- **Base image**: `alpine:3.24` (read `FROM alpine` in the Dockerfile; CI bumps it)
 - **Current Bun version**: Defined by `ARG BUN_VERSION` at the top of the Dockerfile (auto-bumped weekly by CI — never trust a version number written in prose; read the Dockerfile)
 - **Architecture support**: x86_64 (x64-musl-baseline) and aarch64 (aarch64-musl)
 - **Key features**:
@@ -38,8 +46,8 @@ mini-bun/
 ### .github/workflows/publish.yml
 - **Trigger**: Weekly cron (Mondays at midnight) or manual dispatch
 - **Two jobs**:
-  1. `check_and_update_bun_version`: Compares current vs latest Bun release, updates Dockerfile and commits if new version found
-  2. `docker`: Builds multi-arch image (amd64, arm64) and pushes to Docker Hub
+  1. `check_and_update_bun_version`: Compares current vs latest Bun and Alpine pins, updates the Dockerfile and commits if either pin drifted
+  2. `docker`: Builds multi-arch image (amd64, arm64), writes the measured amd64 size into README.MD, and pushes to Docker Hub
 
 ## Development Workflows
 
@@ -65,15 +73,16 @@ docker run -it mini-bun bun --version
 
 ## Version Management
 
-The Bun version is managed via the `BUN_VERSION` build argument in the Dockerfile:
-- Located at the top of the Dockerfile: `ARG BUN_VERSION=...` (read the Dockerfile for the current value)
-- Automatically updated by GitHub Actions when new Bun releases are detected
-- Commit message format: `🚀 Update Bun version to vX.X.X`
+Bun and Alpine pins live in the Dockerfile. Run `scripts/bump-versions.sh apply` (or wait for the weekly workflow) to update them:
+- Bun: first `ARG BUN_VERSION=...` (read the Dockerfile for the current value)
+- Alpine: both `FROM alpine:X.Y` lines
+- README Alpine minor and `**N.N MB**` size: `scripts/bump-versions.sh sync-docs <image>` after a real amd64 build. Do not type the size by hand.
+- Commit message is bun-only, alpine-only, or both. See `scripts/bump-versions.sh`.
 
 ## Conventions
 
 ### Commit Messages
-- Version updates use rocket emoji: `🚀 Update Bun version to vX.X.X`
+- Version updates use a rocket emoji. Bun-only, alpine-only, and combined messages are produced by `scripts/bump-versions.sh`.
 
 ### Docker Tags
 - `popwers/mini-bun:latest` - Latest stable build
@@ -84,11 +93,11 @@ The Bun version is managed via the `BUN_VERSION` build argument in the Dockerfil
 
 ## Important Notes for AI Assistants
 
-1. **Version Updates**: When updating Bun version, only modify the `ARG BUN_VERSION=` line in Dockerfile
+1. **Version Updates**: Run `scripts/bump-versions.sh apply` (or the weekly workflow). That updates `ARG BUN_VERSION` and both `FROM alpine` lines.
 2. **Multi-arch Support**: Any Dockerfile changes must work for both amd64 and arm64
 3. **GPG Keys**: The GPG key `F3DCC08A8572C0749B3E18888EAB4D40A7B22B59` is Bun's official signing key
-4. **Alpine Version**: Currently using Alpine 3.22 - check compatibility before upgrading
-5. **No package.json**: This is a Docker-only project, no Node/Bun package management
+4. **Alpine Version**: Read `FROM alpine` in the Dockerfile. Check compatibility before bumping the pin.
+5. **No package.json**: This is a Docker-only project, no Node/Bun package management. Vite+, shadcn, and any app UI toolchain are N/A. Do not install them.
 6. **UPX Compression**: Uses `--best --lzma --no-backup` (binary stripped via `strip -s` before packing). `--ultra-brute` was benchmarked and rejected: ~10× slower for <1% gain. `--all-methods` was the previous setting; `--best --lzma` is both faster and slightly smaller in practice.
 7. **Security**: Downloads are verified via GPG signature and SHA256 checksum
 
@@ -101,14 +110,18 @@ The Bun version is managed via the `BUN_VERSION` build argument in the Dockerfil
 
 ## Common Tasks
 
-### Check Current Bun Version
+### Check or apply image pins
 ```bash
-grep 'ARG BUN_VERSION=' Dockerfile | cut -d'=' -f2
+./scripts/bump-versions.sh check
+./scripts/bump-versions.sh apply
+./scripts/bump-versions.sh sync-docs mini-bun:verify
+./scripts/bump-versions.sh check-docs mini-bun:verify
 ```
 
 ### Verify Image Size
 ```bash
-docker images mini-bun
+docker image inspect -f '{{.Size}}' mini-bun:verify
+./scripts/verify-doctor.sh mini-bun:verify
 ```
 
 ### Check Latest Bun Release
