@@ -271,6 +271,10 @@ cmd_check_docs() {
 	IMAGE=${1:-}
 	status=0
 	minor=$(pin_current alpine)
+	if ! grep -q "Alpine ${minor}" "$README"; then
+		echo "error: README.MD must name Alpine ${minor}" >&2
+		status=1
+	fi
 	leftover=$(grep -nE 'Alpine 3\.[0-9]+|alpine:3\.[0-9]+' "$README" "$CLAUDE" | grep -vF "Alpine ${minor}" | grep -vF "alpine:${minor}" || true)
 	if [ -n "$leftover" ]; then
 		printf '%s\n' "$leftover" >&2
