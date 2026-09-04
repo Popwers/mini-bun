@@ -9,7 +9,7 @@ TLS fetch lets a user call `fetch` over HTTPS without installing `ca-certificate
 
 ## How to get to it (user POV)
 
-- Run `docker run --rm popwers/mini-bun bun -e 'fetch("https://example.com")...'`.
+- Run `docker run --rm popwers/mini-bun bun -e 'fetch("https://bun.sh")...'`.
 - Call `fetch` from application code in a `FROM popwers/mini-bun` image that did not `apk add ca-certificates`.
 
 ## Driving it with docker

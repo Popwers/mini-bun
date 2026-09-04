@@ -35,7 +35,10 @@ echo "$OS_RELEASE" | grep -q "^VERSION_ID=${ALPINE_PIN}" || {
 
 BYTES="$(docker image inspect -f '{{.Size}}' "$IMAGE")"
 MEASURED="$(awk "BEGIN { printf \"%.1f\", $BYTES / 1000 / 1000 }")"
-CLAIMED="$(sed -n 's/.*\*\*~\?\([0-9][0-9]*\.[0-9]\) MB\*\*.*/\1/p' README.MD | head -n1)"
+CLAIMED="$(sed -n \
+	-e 's/.*\*\*~\([0-9][0-9]*\.[0-9][0-9]*\) MB\*\*.*/\1/p' \
+	-e 's/.*\*\*\([0-9][0-9]*\.[0-9][0-9]*\) MB\*\*.*/\1/p' \
+	README.MD | sed -n '1p')"
 if [ -z "$CLAIMED" ]; then
 	echo "FAIL: README.MD has no **N.N MB** size claim" >&2
 	exit 1
