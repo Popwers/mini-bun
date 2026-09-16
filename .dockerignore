@@ -4,8 +4,9 @@
 .claudeignore
 .cursor
 .serena
-CLAUDE.md
+AGENTS.md
 README.MD
+Makefile
 .gitignore
 .dockerignore
 Dockerfile
