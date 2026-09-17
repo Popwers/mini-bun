@@ -6,7 +6,6 @@ cd "$ROOT"
 
 DOCKERFILE="$ROOT/Dockerfile"
 README="$ROOT/README.MD"
-CLAUDE="$ROOT/CLAUDE.md"
 
 BUN_LATEST_API="https://api.github.com/repos/oven-sh/bun/releases/latest"
 ALPINE_LATEST_YAML="https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/latest-releases.yaml"
@@ -174,13 +173,11 @@ pin_write() {
 
 sync_alpine_docs() {
 	minor=$(pin_current alpine)
-	for f in "$README" "$CLAUDE"; do
-		tmp=$(mktemp)
-		sed -e "s/Alpine 3\.[0-9][0-9]*/Alpine ${minor}/g" \
-			-e "s/alpine:3\.[0-9][0-9]*/alpine:${minor}/g" \
-			"$f" > "$tmp"
-		mv "$tmp" "$f"
-	done
+	tmp=$(mktemp)
+	sed -e "s/Alpine 3\.[0-9][0-9]*/Alpine ${minor}/g" \
+		-e "s/alpine:3\.[0-9][0-9]*/alpine:${minor}/g" \
+		"$README" > "$tmp"
+	mv "$tmp" "$README"
 }
 
 write_output() {
@@ -275,10 +272,10 @@ cmd_check_docs() {
 		echo "error: README.MD must name Alpine ${minor}" >&2
 		status=1
 	fi
-	leftover=$(grep -nE 'Alpine 3\.[0-9]+|alpine:3\.[0-9]+' "$README" "$CLAUDE" | grep -vF "Alpine ${minor}" | grep -vF "alpine:${minor}" || true)
+	leftover=$(grep -nE 'Alpine 3\.[0-9]+|alpine:3\.[0-9]+' "$README" | grep -vF "Alpine ${minor}" | grep -vF "alpine:${minor}" || true)
 	if [ -n "$leftover" ]; then
 		printf '%s\n' "$leftover" >&2
-		echo "error: Alpine minor in README.MD or CLAUDE.md does not match Dockerfile ($minor)" >&2
+		echo "error: Alpine minor in README.MD does not match Dockerfile ($minor)" >&2
 		status=1
 	fi
 	if [ -n "$IMAGE" ]; then

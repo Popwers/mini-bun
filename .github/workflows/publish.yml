@@ -87,7 +87,7 @@ jobs:
         with:
           author_name: Popwers
           author_email: lionel.bataille@hotmail.com
-          add: 'Dockerfile README.MD CLAUDE.md'
+          add: 'Dockerfile README.MD'
           message: ${{ steps.sync.outputs.commit_message }}
 
       - name: Build arm64 for testing
