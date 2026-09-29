@@ -5,10 +5,16 @@ on:
   schedule:
     - cron: '0 0 * * 1'
 
+# The docker job commits to main: two runs (cron plus manual dispatch) must not push at once.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   check_and_update_bun_version:
     name: Check image pins
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       new_version: ${{ steps.check_version.outputs.new_version }}
       latest_version: ${{ steps.check_version.outputs.latest_version }}
@@ -24,7 +30,11 @@ jobs:
   docker:
     name: Release to Dockerhub
     needs: check_and_update_bun_version
+    # Nothing to release when no pin moved: the old run rebuilt and smoke-tested an image it never pushed.
+    if: ${{ needs.check_and_update_bun_version.outputs.new_version == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
+    # Slowest observed run (cold cache, arm64 under QEMU, push) is 5.7 min.
+    timeout-minutes: 20
     permissions:
       contents: write
       packages: write

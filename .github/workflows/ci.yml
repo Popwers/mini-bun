@@ -5,10 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# A newer push to the same PR makes the running build useless. Main runs are never cancelled.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build-and-smoke-test:
     name: Build and smoke test
     runs-on: ubuntu-latest
+    # Normal run is about 1 min (p90 1.5). Without a timeout a hang bills up to 6 h.
+    timeout-minutes: 10
     if: ${{ !startsWith(github.event.head_commit.message, '🚀 Update') }}
     steps:
       - name: Checkout
