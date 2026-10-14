@@ -30,7 +30,7 @@ jobs:
   docker:
     name: Release to Dockerhub
     needs: check_and_update_bun_version
-    # Nothing to release when no pin moved: the old run rebuilt and smoke-tested an image it never pushed.
+    # Release only when a pin moved. Manual dispatch forces a rebuild of the current pins.
     if: ${{ needs.check_and_update_bun_version.outputs.new_version == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     # Slowest observed run (cold cache, arm64 under QEMU, push) is 5.7 min.
