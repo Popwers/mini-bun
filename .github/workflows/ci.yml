@@ -1,9 +1,20 @@
+# Runner selection (.github/actions/pick-runner):
+#   vars.CI_FORCE_RUNNER     github | build-server | auto (default auto)
+#   vars.CI_QUOTA_THRESHOLD  remaining-minutes percent under which jobs go to the build server (default 10)
+#   secrets.CI_BILLING_TOKEN fine-grained token that reads billing usage (see the action README)
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner for this run
+        type: choice
+        options: [auto, github, build-server]
+        default: auto
 
 # A newer push to the same PR makes the running build useless. Main runs are never cancelled.
 concurrency:
@@ -11,12 +22,53 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  pick-runner:
+    name: Pick runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ !startsWith(github.event.head_commit.message, '🚀 Update') }}
+    permissions:
+      contents: read
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+      target: ${{ steps.pick.outputs.target }}
+    steps:
+      # The action is referenced locally so a PR tests its own version of it.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+
+      - name: Pick runner
+        id: pick
+        uses: ./.github/actions/pick-runner
+        with:
+          force: ${{ inputs.runner != '' && inputs.runner != 'auto' && inputs.runner || vars.CI_FORCE_RUNNER }}
+          threshold: ${{ vars.CI_QUOTA_THRESHOLD || '10' }}
+          token: ${{ secrets.CI_BILLING_TOKEN }}
+
+  pick-runner-test:
+    name: Pick runner test
+    needs: pick-runner
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run pick-runner test
+        run: ./tests/pick-runner.test.sh
+
   build-and-smoke-test:
     name: Build and smoke test
-    runs-on: ubuntu-latest
+    needs: pick-runner
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
     # Normal run is about 1 min (p90 1.5). Without a timeout a hang bills up to 6 h.
     timeout-minutes: 10
     if: ${{ !startsWith(github.event.head_commit.message, '🚀 Update') }}
+    env:
+      # The build server keeps its Docker images between runs and may run two jobs at once.
+      IMAGE: mini-bun:ci-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,19 +76,27 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
 
+      # One gha cache scope per architecture: an arm64 run would otherwise overwrite the amd64 cache.
       - name: Build image
         uses: docker/build-push-action@v6
         with:
           context: .
           load: true
-          tags: mini-bun:ci-test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha,scope=${{ runner.arch == 'X64' && 'buildkit' || runner.arch }}
+          cache-to: type=gha,mode=max,scope=${{ runner.arch == 'X64' && 'buildkit' || runner.arch }}
 
       - name: Smoke test
         run: |
           EXPECTED=$(grep 'ARG BUN_VERSION=' Dockerfile | cut -d'=' -f2 | sed 's/^v//')
-          ./scripts/smoke-test.sh mini-bun:ci-test "$EXPECTED"
+          ./scripts/smoke-test.sh "$IMAGE" "$EXPECTED"
 
+      # The README size pin is the amd64 image. Other architectures only check the Alpine mentions.
       - name: Check docs against image
-        run: ./scripts/bump-versions.sh check-docs mini-bun:ci-test
+        env:
+          SIZE_IMAGE: ${{ runner.arch == 'X64' && env.IMAGE || '' }}
+        run: ./scripts/bump-versions.sh check-docs "$SIZE_IMAGE"
+
+      - name: Remove image
+        if: ${{ always() }}
+        run: docker image rm --force "$IMAGE" || true

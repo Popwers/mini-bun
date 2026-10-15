@@ -12,6 +12,8 @@ mini-bun is a Docker image. It packages the official Bun musl release into Alpin
 - `README.MD` uses that uppercase extension on purpose. Pin scripts and `publish.yml` depend on that name.
 - `.cursor/skills/verify-mini-bun/` tells you how to drive the image.
 - `.github/workflows/ci.yml` builds on push and on PR, then runs the smoke test.
+- `.github/actions/pick-runner/` is the shared composite action that picks GitHub-hosted or the self-hosted ARM64 build server from the Actions quota. Other repos reference it by SHA. Its README lists the token permissions.
+- `tests/pick-runner.test.sh` tests that action against a local fixture server. Needs bash, curl, jq and python3.
 - `.github/workflows/publish.yml` bumps pins weekly and pushes the image.
 
 ## Dockerfile
@@ -100,3 +102,5 @@ Check or apply pins:
 Pin commit messages use a rocket emoji. See `scripts/bump-versions.sh sync-docs`. CI skips those commits.
 
 `.github/workflows/ci.yml` builds the image, runs `scripts/smoke-test.sh`, and runs `check-docs` against the loaded image.
+
+CI jobs run where the `pick-runner` job says: `ubuntu-latest` or `["self-hosted","ARM64"]`. Steps must work on both. The README size check runs only on X64 because the pin is the amd64 size. The `gha` build cache uses one scope per architecture. Force a target with the `runner` input of a manual dispatch or the `CI_FORCE_RUNNER` variable.
