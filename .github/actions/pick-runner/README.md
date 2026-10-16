@@ -7,7 +7,9 @@ Composite action that picks where CI jobs run. Jobs use a GitHub-hosted runner w
 ```yaml
 jobs:
   pick-runner:
-    runs-on: ubuntu-latest
+    # Owner with a self-hosted build server: run this job there (see below).
+    runs-on: ${{ fromJSON(vars.CI_PICK_RUNNER_ON || '["self-hosted","ARM64"]') }}
+    # Owner without a self-hosted runner: runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
@@ -26,6 +28,16 @@ jobs:
     needs: pick-runner
     runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
 ```
+
+## Where the pick-runner job runs
+
+GitHub never moves a queued job to another runner. If `pick-runner` itself sits on `ubuntu-latest` and the Actions quota is spent (private repository, spending limit reached), GitHub never starts it, and every job that `needs` it waits forever. So:
+
+- **Owner with a build server** (mystudio-digital): `runs-on: ${{ fromJSON(vars.CI_PICK_RUNNER_ON || '["self-hosted","ARM64"]') }}`. The job takes a few seconds on the build server and spends no GitHub minute. While the quota lasts it still outputs `"ubuntu-latest"`, so the following jobs keep running on GitHub. Once the quota is spent the following jobs go to the build server, and the CI passes anyway.
+- Escape hatch when the build server is down or stuck: set the repository or organization variable `CI_PICK_RUNNER_ON` to `"ubuntu-latest"` (JSON, quotes included) and also `CI_FORCE_RUNNER=github`. This brings back the old behaviour.
+- **Owner without a self-hosted runner** (Popwers repositories): keep `runs-on: ubuntu-latest`. A self-hosted label there would queue forever. Public repositories (mini-bun, astrojs-template, strapi-template) do not use the quota, so they are not affected. A private one (tete-anler) still stops when the account quota is spent: it has no runner to fall back to.
+
+Limits: on a build server with one busy runner, `pick-runner` waits for a free slot before the GitHub jobs can start. If the build server is offline, CI waits until the escape hatch is set. The first step of the action, `Show runner`, prints where the job ran. Without `jq` on the runner the quota is not read and the build server is picked (unless `force: github`).
 
 ## Inputs
 

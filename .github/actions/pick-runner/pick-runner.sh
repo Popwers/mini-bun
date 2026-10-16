@@ -9,6 +9,17 @@ TOKEN="${PICK_TOKEN:-}"
 OWNER="${PICK_OWNER:-}"
 DEFAULT_BUILD_SERVER_RUNNER='["self-hosted","ARM64"]'
 
+# Without jq nothing can be parsed: honour force=github, else the build server.
+if ! command -v jq >/dev/null 2>&1; then
+	echo "::warning::pick-runner: jq not found on this runner, quota not read"
+	if [ "$(printf '%s' "${PICK_FORCE:-}" | tr '[:upper:]' '[:lower:]')" = github ]; then
+		printf 'runner="%s"\ntarget=github\nremaining-percent=\nreason=forced to github (no jq)\n' "${PICK_GITHUB_RUNNER:-ubuntu-latest}" >>"${GITHUB_OUTPUT:-/dev/stdout}"
+	else
+		printf 'runner=%s\ntarget=build-server\nremaining-percent=\nreason=jq not found\n' "${PICK_BUILD_SERVER_RUNNER:-$DEFAULT_BUILD_SERVER_RUNNER}" >>"${GITHUB_OUTPUT:-/dev/stdout}"
+	fi
+	exit 0
+fi
+
 target=''
 reason=''
 used=''

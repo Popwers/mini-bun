@@ -44,6 +44,12 @@ outputs:
 runs:
   using: composite
   steps:
+    # Shows where the pick-runner job itself ran: the build server when the caller
+    # puts this job there so it never waits on GitHub-hosted minutes.
+    - name: Show runner
+      shell: bash
+      run: echo "pick-runner job ran on ${{ runner.name }} / ${{ runner.os }}-${{ runner.arch }} (${{ runner.environment }})"
+
     - name: Pick runner
       id: pick
       shell: bash
