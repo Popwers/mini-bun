@@ -1,4 +1,3 @@
-# Build outputs
 dist/
 build/
 .next/
@@ -8,29 +7,17 @@ build/
 .vercel/
 .cache/
 coverage/
-
-# Dependencies
 node_modules/
-
-# Lock files
 *.lock
 bun.lockb
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
-
-# Python
 __pycache__/
 *.pyc
 .venv/
 venv/
-
-# Minified assets
 *.min.js
 *.min.css
-
-# OS noise
 .DS_Store
-
-# Indexing / tooling
 .grepai/
