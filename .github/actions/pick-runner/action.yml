@@ -1,0 +1,66 @@
+name: Pick runner
+description: Choose a GitHub-hosted runner or the self-hosted build server from the remaining GitHub Actions minutes.
+
+inputs:
+  token:
+    description: Fine-grained token that can read the owner's billing usage (secret CI_BILLING_TOKEN). Empty falls back to the build server.
+    required: false
+    default: ''
+  force:
+    description: github, build-server, or auto. Empty or any other value means auto. Case-insensitive.
+    required: false
+    default: ''
+  threshold:
+    description: Remaining-minutes percentage under which jobs move to the build server.
+    required: false
+    default: '10'
+  github-runner:
+    description: GitHub-hosted runner label.
+    required: false
+    default: ubuntu-latest
+  build-server-runner:
+    description: JSON array of self-hosted runner labels.
+    required: false
+    default: '["self-hosted","ARM64"]'
+  included-minutes:
+    description: Included monthly minutes. Overrides the value derived from the plan.
+    required: false
+    default: ''
+
+outputs:
+  runner:
+    description: JSON value for runs-on via fromJSON, such as "ubuntu-latest" (quoted) or ["self-hosted","ARM64"].
+    value: ${{ steps.pick.outputs.runner }}
+  target:
+    description: github or build-server.
+    value: ${{ steps.pick.outputs.target }}
+  remaining-percent:
+    description: Remaining included minutes in percent. Empty when the quota was not read.
+    value: ${{ steps.pick.outputs.remaining-percent }}
+  reason:
+    description: Why this target was picked.
+    value: ${{ steps.pick.outputs.reason }}
+
+runs:
+  using: composite
+  steps:
+    # Shows where the pick-runner job itself ran: the build server when the caller
+    # puts this job there so it never waits on GitHub-hosted minutes.
+    - name: Show runner
+      shell: bash
+      run: echo "pick-runner job ran on ${{ runner.name }} / ${{ runner.os }}-${{ runner.arch }} (${{ runner.environment }})"
+
+    - name: Pick runner
+      id: pick
+      shell: bash
+      env:
+        PICK_TOKEN: ${{ inputs.token }}
+        PICK_FORCE: ${{ inputs.force }}
+        PICK_THRESHOLD: ${{ inputs.threshold }}
+        PICK_GITHUB_RUNNER: ${{ inputs.github-runner }}
+        PICK_BUILD_SERVER_RUNNER: ${{ inputs.build-server-runner }}
+        PICK_INCLUDED_MINUTES: ${{ inputs.included-minutes }}
+        PICK_REPO_PRIVATE: ${{ github.event.repository.private }}
+        PICK_OWNER: ${{ github.repository_owner }}
+        PICK_OWNER_TYPE: ${{ github.event.repository.owner.type }}
+      run: bash "${{ github.action_path }}/pick-runner.sh"
