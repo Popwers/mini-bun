@@ -16,6 +16,10 @@ on:
         options: [auto, github, build-server]
         default: auto
 
+# The repository default token is read-write. These jobs only read the repository.
+permissions:
+  contents: read
+
 # A newer push to the same PR makes the running build useless. Main runs are never cancelled.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
