@@ -182,6 +182,19 @@ run none PICK_FORCE=BUILD-SERVER PICK_REPO_PRIVATE=false
 expect build-server '' 'forced to build-server'
 expect_no_warning
 
+CURRENT='fork pull request never reaches the build server'
+run none PICK_FORK_PR=true PICK_FORCE=build-server
+expect github '' 'fork pull request'
+run none PICK_FORK_PR=true PICK_REPO_PRIVATE=true PICK_TOKEN=
+expect github '' 'fork pull request'
+mkdir -p "$WORK/nojq"
+ln -sf "$(command -v bash)" "$WORK/nojq/bash"
+ln -sf "$(command -v tr)" "$WORK/nojq/tr"
+run none PICK_FORK_PR=true PICK_FORCE=build-server PATH="$WORK/nojq"
+check 'target without jq' github "$(output target)"
+run none PICK_FORK_PR=false PICK_FORCE=build-server
+expect build-server '' 'forced to build-server'
+
 CURRENT='unknown force value means auto'
 run none PICK_FORCE=sometimes PICK_REPO_PRIVATE=false
 expect github '' 'public repository'

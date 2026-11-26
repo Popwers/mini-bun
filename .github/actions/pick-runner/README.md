@@ -61,11 +61,12 @@ Limits: on a build server with one busy runner, `pick-runner` waits for a free s
 
 ## Decision
 
-1. `force` wins.
-2. A public repository uses GitHub-hosted runners, which are free there.
-3. No token means the build server, with a warning.
-4. Used minutes are the sum of `grossQuantity` over the `minutes` items of the billing usage summary for the current month. Included minutes come from `included-minutes` or the plan: free 2000, pro and team 3000, enterprise 50000, anything else 2000.
-5. Below `threshold` percent remaining, jobs go to the build server.
+1. A pull request from a fork always gets the GitHub-hosted runner, even with `force: build-server`, so untrusted code never reaches the self-hosted build server. The action detects it from the event (`pull_request` whose head repository is not this one).
+2. `force` wins.
+3. A public repository uses GitHub-hosted runners, which are free there.
+4. No token means the build server, with a warning.
+5. Used minutes are the sum of `grossQuantity` over the `minutes` items of the billing usage summary for the current month. Included minutes come from `included-minutes` or the plan: free 2000, pro and team 3000, enterprise 50000, anything else 2000.
+6. Below `threshold` percent remaining, jobs go to the build server.
 
 Any API, JSON or parsing failure picks the build server with a warning. The step never fails the job.
 
