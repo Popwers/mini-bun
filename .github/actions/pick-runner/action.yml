@@ -60,6 +60,7 @@ runs:
         PICK_GITHUB_RUNNER: ${{ inputs.github-runner }}
         PICK_BUILD_SERVER_RUNNER: ${{ inputs.build-server-runner }}
         PICK_INCLUDED_MINUTES: ${{ inputs.included-minutes }}
+        PICK_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         PICK_REPO_PRIVATE: ${{ github.event.repository.private }}
         PICK_OWNER: ${{ github.repository_owner }}
         PICK_OWNER_TYPE: ${{ github.event.repository.owner.type }}
