@@ -7,8 +7,9 @@ cd "$ROOT"
 DOCKERFILE="$ROOT/Dockerfile"
 README="$ROOT/README.MD"
 
-BUN_LATEST_API="https://api.github.com/repos/oven-sh/bun/releases/latest"
-ALPINE_LATEST_YAML="https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/latest-releases.yaml"
+# Overridable so tests/bump-versions.test.sh can serve fixtures.
+BUN_LATEST_API=${BUN_LATEST_API:-https://api.github.com/repos/oven-sh/bun/releases/latest}
+ALPINE_LATEST_YAML=${ALPINE_LATEST_YAML:-https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/latest-releases.yaml}
 PINS="bun alpine"
 IMAGE=
 
@@ -54,10 +55,20 @@ pin_current() {
 	esac
 }
 
+# GitHub's API refuses anonymous calls once a shared runner address spent its hourly quota, so the
+# lookup sends the job token when there is one. The header goes through stdin, never the command line.
+github_api() {
+	if [ -n "${GITHUB_TOKEN:-}" ]; then
+		printf 'Authorization: Bearer %s\n' "$GITHUB_TOKEN" | curl -fsSL -H @- -H 'Accept: application/vnd.github+json' "$1"
+	else
+		curl -fsSL "$1"
+	fi
+}
+
 pin_latest() {
 	case "$1" in
 		bun)
-			json=$(curl -fsSL "$BUN_LATEST_API")
+			json=$(github_api "$BUN_LATEST_API")
 			tag=$(printf '%s\n' "$json" | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | sed -n '1p')
 			tag=${tag#bun-}
 			if [ -z "$tag" ]; then

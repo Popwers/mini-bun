@@ -63,6 +63,9 @@ jobs:
       - name: Run pick-runner test
         run: ./tests/pick-runner.test.sh
 
+      - name: Run bump-versions test
+        run: ./tests/bump-versions.test.sh
+
   build-and-smoke-test:
     name: Build and smoke test
     needs: pick-runner

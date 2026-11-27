@@ -25,6 +25,8 @@ jobs:
 
       - name: Check image pins
         id: check_version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: ./scripts/bump-versions.sh check
 
   docker:
@@ -46,6 +48,8 @@ jobs:
           ref: main
 
       - name: Apply image pins
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: ./scripts/bump-versions.sh apply
 
       - name: Setup Docker emulator
